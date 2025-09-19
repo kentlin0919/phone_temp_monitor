@@ -243,8 +243,10 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("手機溫度/記憶體監控 (Python)")
-        self.geometry("560x360")
-        self.resizable(False, False)
+        self.geometry("640x420")
+        self.minsize(560, 360)
+        self.resizable(True, True)
+        self.bind("<Configure>", self._on_resize)
 
         self.refresh_ms = tk.IntVar(value=2000)
         self.is_running = False
@@ -270,54 +272,91 @@ class App(tk.Tk):
         self._update_log_target(datetime.now())
 
     def _build_ui(self):
-        pad = {"padx": 10, "pady": 6}
+        pad = {"padx": 8, "pady": 6}
+
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+
+        content = ttk.Frame(self, padding=(16, 16, 16, 16))
+        content.grid(row=0, column=0, sticky="nsew")
+        content.columnconfigure(0, weight=0)
+        content.columnconfigure(1, weight=1)
+        content.columnconfigure(2, weight=1)
 
         row = 0
-        ttk.Label(self, text="裝置:").grid(row=row, column=0, sticky="e", **pad)
-        self.device_combo = ttk.Combobox(self, textvariable=self.selected_device, state="readonly", width=28)
-        self.device_combo.grid(row=row, column=1, sticky="w", **pad)
-        ttk.Button(self, text="重新整理裝置", command=self._populate_devices).grid(row=row, column=2, sticky="w", **pad)
+        ttk.Label(content, text="裝置:").grid(row=row, column=0, sticky="e", **pad)
+        self.device_combo = ttk.Combobox(content, textvariable=self.selected_device, state="readonly")
+        self.device_combo.grid(row=row, column=1, sticky="ew", **pad)
+        ttk.Button(content, text="重新整理裝置", command=self._populate_devices).grid(row=row, column=2, sticky="ew", **pad)
 
         row += 1
-        ttk.Label(self, text="更新頻率(ms):").grid(row=row, column=0, sticky="e", **pad)
-        self.refresh_entry = ttk.Spinbox(self, from_=500, to=60000, increment=500, textvariable=self.refresh_ms, width=10)
+        ttk.Label(content, text="更新頻率(ms):").grid(row=row, column=0, sticky="e", **pad)
+        self.refresh_entry = ttk.Spinbox(
+            content,
+            from_=500,
+            to=60000,
+            increment=500,
+            textvariable=self.refresh_ms,
+            width=10,
+        )
         self.refresh_entry.grid(row=row, column=1, sticky="w", **pad)
-        ttk.Checkbutton(self, text="寫入CSV紀錄", variable=self.logging_enabled).grid(row=row, column=2, sticky="w", **pad)
+        ttk.Checkbutton(content, text="寫入CSV紀錄", variable=self.logging_enabled).grid(row=row, column=2, sticky="w", **pad)
 
         row += 1
-        ttk.Label(self, text="App 套件(可選):").grid(row=row, column=0, sticky="e", **pad)
-        ttk.Entry(self, textvariable=self.package_name, width=30).grid(row=row, column=1, sticky="w", **pad)
-        ttk.Label(self, text="(紀錄 App PSS/CPU/MEM)").grid(row=row, column=2, sticky="w", **pad)
+        ttk.Label(content, text="App 套件(可選):").grid(row=row, column=0, sticky="e", **pad)
+        ttk.Entry(content, textvariable=self.package_name).grid(row=row, column=1, sticky="ew", **pad)
+        self.package_hint = ttk.Label(content, text="(紀錄 App PSS/CPU/MEM)")
+        self.package_hint.grid(row=row, column=2, sticky="w", **pad)
 
         row += 1
-        ttk.Label(self, text="目前溫度(°C):", font=("Segoe UI", 11, "bold")).grid(row=row, column=0, sticky="e", **pad)
-        self.temp_label = ttk.Label(self, textvariable=self.current_temp, font=("Consolas", 16, "bold"))
+        ttk.Label(content, text="目前溫度(°C):", font=("Segoe UI", 11, "bold")).grid(row=row, column=0, sticky="e", **pad)
+        self.temp_label = ttk.Label(content, textvariable=self.current_temp, font=("Consolas", 16, "bold"))
         self.temp_label.grid(row=row, column=1, sticky="w", **pad)
 
         row += 1
-        ttk.Label(self, text="系統記憶體使用率:").grid(row=row, column=0, sticky="e", **pad)
-        ttk.Label(self, textvariable=self.mem_usage_pct, font=("Consolas", 12)).grid(row=row, column=1, sticky="w", **pad)
+        ttk.Label(content, text="系統記憶體使用率:").grid(row=row, column=0, sticky="e", **pad)
+        ttk.Label(content, textvariable=self.mem_usage_pct, font=("Consolas", 12)).grid(row=row, column=1, sticky="w", **pad)
 
         row += 1
-        ttk.Label(self, text="可用/總記憶體(MB):").grid(row=row, column=0, sticky="e", **pad)
-        ttk.Label(self, text="可用:").grid(row=row, column=1, sticky="e", **pad)
-        ttk.Label(self, textvariable=self.mem_avail_mb, font=("Consolas", 12)).grid(row=row, column=2, sticky="w", **pad)
-        ttk.Label(self, text="總計:").grid(row=row, column=3, sticky="e", **pad)
-        ttk.Label(self, textvariable=self.mem_total_mb, font=("Consolas", 12)).grid(row=row, column=4, sticky="w", **pad)
+        ttk.Label(content, text="可用/總記憶體(MB):").grid(row=row, column=0, sticky="ne", **pad)
+        mem_frame = ttk.Frame(content)
+        mem_frame.grid(row=row, column=1, columnspan=2, sticky="ew", **pad)
+        mem_frame.columnconfigure(1, weight=1)
+        mem_frame.columnconfigure(3, weight=1)
+        ttk.Label(mem_frame, text="可用:").grid(row=0, column=0, sticky="e", padx=(0, 6))
+        ttk.Label(mem_frame, textvariable=self.mem_avail_mb, font=("Consolas", 12)).grid(row=0, column=1, sticky="w")
+        ttk.Label(mem_frame, text="總計:").grid(row=0, column=2, sticky="e", padx=(12, 6))
+        ttk.Label(mem_frame, textvariable=self.mem_total_mb, font=("Consolas", 12)).grid(row=0, column=3, sticky="w")
 
         row += 1
-        ttk.Label(self, text="App PSS(MB):").grid(row=row, column=0, sticky="e", **pad)
-        ttk.Label(self, textvariable=self.app_pss_mb, font=("Consolas", 12)).grid(row=row, column=1, sticky="w", **pad)
+        ttk.Label(content, text="App PSS(MB):").grid(row=row, column=0, sticky="e", **pad)
+        ttk.Label(content, textvariable=self.app_pss_mb, font=("Consolas", 12)).grid(row=row, column=1, sticky="w", **pad)
 
         row += 1
-        ttk.Label(self, text="狀態:").grid(row=row, column=0, sticky="e", **pad)
-        self.status_label = ttk.Label(self, textvariable=self.status_text)
-        self.status_label.grid(row=row, column=1, columnspan=4, sticky="w", **pad)
+        ttk.Label(content, text="狀態:").grid(row=row, column=0, sticky="ne", **pad)
+        self.status_label = ttk.Label(content, textvariable=self.status_text, wraplength=320, justify="left")
+        self.status_label.grid(row=row, column=1, columnspan=2, sticky="nsew", **pad)
+        content.rowconfigure(row, weight=1)
 
         row += 1
-        self.start_btn = ttk.Button(self, text="開始", command=self.start)
-        self.start_btn.grid(row=row, column=1, sticky="w", **pad)
-        ttk.Button(self, text="停止", command=self.stop).grid(row=row, column=2, sticky="w", **pad)
+        button_frame = ttk.Frame(content)
+        button_frame.grid(row=row, column=0, columnspan=3, sticky="ew", pady=(10, 0))
+        button_frame.columnconfigure(0, weight=1)
+        button_frame.columnconfigure(1, weight=1)
+
+        self.start_btn = ttk.Button(button_frame, text="開始", command=self.start)
+        self.start_btn.grid(row=0, column=0, sticky="ew", padx=(0, 6))
+        ttk.Button(button_frame, text="停止", command=self.stop).grid(row=0, column=1, sticky="ew", padx=(6, 0))
+
+    def _on_resize(self, event):
+        if event.widget is not self:
+            return
+        wrap_padding = 240
+        wraplength = max(event.width - wrap_padding, 220)
+        self.status_label.configure(wraplength=wraplength)
+        if hasattr(self, "package_hint"):
+            hint_padding = 360
+            self.package_hint.configure(wraplength=max(event.width - hint_padding, 160))
 
     def _populate_devices(self):
         try:
@@ -520,4 +559,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
