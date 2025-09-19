@@ -1,2 +1,72 @@
-/.vscode
-/logs
+# Editors/IDE
+/.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS-specific
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs
+/logs/
+*.log
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Packaging/build
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+pip-wheel-metadata/
+pip-log.txt
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Testing/coverage
+.pytest_cache/
+.cache/
+.coverage
+.coverage.*
+nosetests.xml
+coverage.xml
+*.cover
+htmlcov/
+
+# Type checkers & linters
+.mypy_cache/
+.pytype/
+.pyre/
+.ruff_cache/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Environment/config
+.env
+.env.*
+*.env
+.python-version
+
+# Databases
+*.sqlite3
